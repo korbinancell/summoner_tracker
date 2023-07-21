@@ -14,7 +14,7 @@ defmodule RiotClient do
     end
 
     with {:ok, %{body: body, status_code: 200}} <-
-           HTTPoison.get(url, get_headers(), opts),
+           get_client().get(url, get_headers(), opts),
          {:ok, body} <- Jason.decode(body, keys: :atoms) do
       {:ok, body}
     else
@@ -23,8 +23,13 @@ defmodule RiotClient do
 
       {_, %HTTPoison.Error{reason: reason}} ->
         {:error, "unable to parse response: '#{inspect(reason)}'"}
+
+      {_, err} ->
+        {:error, err}
     end
   end
+
+  defp get_client, do: Application.get_env(:riot_client, :http_client)
 
   defp get_headers() do
     [

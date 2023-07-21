@@ -6,7 +6,7 @@ defmodule RiotClient.Match do
   import RiotClient
   import RiotClient.Region, only: [to_region_group: 1]
 
-  defstruct ~w(participants)a
+  defstruct ~w(id participants)a
 
   @base_uri "lol/match/v5/matches"
 
@@ -14,6 +14,7 @@ defmodule RiotClient.Match do
 
   def new(data) do
     %RiotClient.Match{
+      id: data.metadata.matchId,
       participants: data.metadata.participants
     }
   end

@@ -17,5 +17,8 @@ import Config
 #       metadata: [:user_id]
 #
 
+config :hackney, use_default_pool: false
+
 config :riot_client,
-  api_key: ""
+  api_key: "",
+  http_client: HTTPoison

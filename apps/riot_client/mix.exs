@@ -26,7 +26,8 @@ defmodule RiotClient.MixProject do
   defp deps do
     [
       {:httpoison, "~> 2.1"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:mox, "~> 0.5.2", only: :test}
     ]
   end
 end
