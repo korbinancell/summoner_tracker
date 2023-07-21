@@ -8,6 +8,8 @@ defmodule RiotClient.Summoner do
 
   @base_uri "lol/summoner/v4/summoners"
 
+  @timeout 10 * 1000
+
   def new(region, item) do
     %RiotClient.Summoner{
       name: item.name,
@@ -26,11 +28,27 @@ defmodule RiotClient.Summoner do
     with {:ok, summoner} <- get(url) do
       {:ok, new(region, summoner)}
     else
-      error -> error
+      {:error, error} -> {:error, "Error while fetching summoner '#{inspect(error)}'"}
     end
   end
 
-  @spec get_by_name(name :: String.t(), region :: String.t()) ::
+  @spec get_by_puuid(puuid :: [String.t()], region :: String.t()) ::
+          {:ok, [%RiotClient.Summoner{}]} | {:error, term()}
+  def get_by_puuid(puuids, region) when is_list(puuids) do
+    puuids
+    |> Enum.map(fn puuid -> Task.async(fn -> get_by_puuid(puuid, region) end) end)
+    |> Enum.map(fn task -> Task.await(task, @timeout) end)
+    |> Enum.reduce_while({:ok, []}, fn
+      {:ok, summoner}, {_, acc} -> {:cont, {:ok, [summoner | acc]}}
+      {:error, err}, _ -> {:halt, {:error, err}}
+    end)
+    |> then(fn
+      {:ok, summoners} -> {:ok, Enum.reverse(summoners)}
+      resp -> resp
+    end)
+  end
+
+  @spec get_by_puuid(puuid :: String.t(), region :: String.t()) ::
           {:ok, %RiotClient.Summoner{}} | {:error, term()}
   def get_by_puuid(puuid, region) do
     url = get_url(region, "/#{@base_uri}/by-puuid/#{puuid}")
@@ -38,7 +56,7 @@ defmodule RiotClient.Summoner do
     with {:ok, summoner} <- get(url) do
       {:ok, new(region, summoner)}
     else
-      error -> error
+      {:error, error} -> {:error, "Error while fetching summoner by puuid '#{inspect(error)}'"}
     end
   end
 end

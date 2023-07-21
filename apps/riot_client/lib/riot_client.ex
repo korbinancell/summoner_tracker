@@ -18,16 +18,11 @@ defmodule RiotClient do
          {:ok, body} <- Jason.decode(body, keys: :atoms) do
       {:ok, body}
     else
-      {:ok, %{body: body}} -> {:error, body}
-      {:error, body} -> parse_error(body)
-    end
-  end
+      {_, %Jason.DecodeError{data: data}} ->
+        {:error, "unable to parse response: '#{inspect(data)}'"}
 
-  defp parse_error(body) do
-    case Jason.decode(body) do
-      {:ok, %{status: status}} -> {:error, {status.status_code, status.message}}
-      {:ok, response} -> {:error, {nil, response}}
-      {:error, response} -> {:error, {nil, "unable to parse response: '#{response}'"}}
+      {_, %HTTPoison.Error{reason: reason}} ->
+        {:error, "unable to parse response: '#{inspect(reason)}'"}
     end
   end
 
@@ -41,10 +36,8 @@ defmodule RiotClient do
 
   @max_requests {20, 1100}
 
-  @doc """
-  Naive rate limiter.
-  TODO: limit requests per 2min as well {100, 12100}
-  """
+  # Naive rate limiter.
+  # TODO: limit requests per 2min as well {100, 12100}
   defp get_bandwidth do
     limiter =
       case :ets.whereis(__MODULE__) do
