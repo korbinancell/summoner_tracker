@@ -25,7 +25,7 @@ config :riot_client,
   do_rate_limit: true
 
 config :summoner_watch,
-  client: RiotClient,
+  riot_client: RiotClient,
   riot_client_summoner: RiotClient.Summoner,
   riot_client_match: RiotClient.Match,
   check_times: 60,

@@ -62,22 +62,21 @@ defmodule SummonerWatch do
   defp watch_summoner(summoner, timestamp, retries, callback) do
     Process.sleep(@check_interval)
 
-    with {:ok, [match_id]} <-
-           get_match_client().get_ids_for_summoner(summoner, count: 1, startTime: timestamp) do
-      callback.({:ok, "Summoner #{summoner.name} completed match #{match_id}"})
-      watch_summoner(summoner, get_timestamp(), retries - 1, callback)
-    else
-      {:ok, []} -> watch_summoner(summoner, get_timestamp(), retries - 1, callback)
-      {:error, err} -> report_failure(summoner, err, callback)
+    case get_match_client().get_ids_for_summoner(summoner, count: 1, startTime: timestamp) do
+      {:ok, [match_id]} ->
+        callback.({:ok, "Summoner #{summoner.name} completed match #{match_id}"})
+        watch_summoner(summoner, get_timestamp(), retries - 1, callback)
+
+      {:ok, []} ->
+        watch_summoner(summoner, get_timestamp(), retries - 1, callback)
+
+      {:error, err} ->
+        callback.({:error, "Error reporting on summoner '#{summoner.name}' '#{inspect(err)}'"})
+        :error
     end
   end
 
   defp get_timestamp, do: DateTime.now!("Etc/UTC") |> DateTime.to_unix()
-
-  defp report_failure(sum, error, callback) do
-    callback.({:error, "Error reporting on summoner '#{sum.name}' '#{inspect(error)}'"})
-    :error
-  end
 
   defp get_players(matches, reject_id) do
     matches

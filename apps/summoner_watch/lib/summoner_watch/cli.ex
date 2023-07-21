@@ -1,5 +1,5 @@
 defmodule SummonerWatch.CLI do
-  @timeout 61 * 60 * 1000
+  @timeout 65 * 60 * 1000
   @options [strict: [summoner: :string, region: :string], aliases: [s: :summoner, r: :region]]
   def main(args) do
     {opts, _} = OptionParser.parse!(args, @options)
