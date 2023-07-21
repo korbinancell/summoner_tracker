@@ -1,4 +1,5 @@
 defmodule RiotClient.Summoner do
+  @behaviour RiotClient.SummonerClient
   @moduledoc """
   Calls to Summoner-V4 api https://developer.riotgames.com/apis#summoner-v4/
   """
@@ -20,8 +21,7 @@ defmodule RiotClient.Summoner do
     }
   end
 
-  @spec get_by_name(name :: String.t(), region :: String.t()) ::
-          {:ok, %RiotClient.Summoner{}} | {:error, term()}
+  @impl true
   def get_by_name(name, region) do
     url = get_url(region, "/#{@base_uri}/by-name/#{name}")
 
@@ -32,8 +32,7 @@ defmodule RiotClient.Summoner do
     end
   end
 
-  @spec get_by_puuid(puuid :: [String.t()], region :: String.t()) ::
-          {:ok, [%RiotClient.Summoner{}]} | {:error, term()}
+  @impl true
   def get_by_puuid(puuids, region) when is_list(puuids) do
     puuids
     |> Enum.map(fn puuid -> Task.async(fn -> get_by_puuid(puuid, region) end) end)
@@ -48,8 +47,7 @@ defmodule RiotClient.Summoner do
     end)
   end
 
-  @spec get_by_puuid(puuid :: String.t(), region :: String.t()) ::
-          {:ok, %RiotClient.Summoner{}} | {:error, term()}
+  @impl true
   def get_by_puuid(puuid, region) do
     url = get_url(region, "/#{@base_uri}/by-puuid/#{puuid}")
 

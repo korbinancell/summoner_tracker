@@ -5,12 +5,16 @@ defmodule RiotClient do
 
   @type region :: String.t()
 
+  @do_rate_limit Application.compile_env!(:riot_client, :do_rate_limit)
+
   def get_url(region, path), do: "https://#{region}.api.riotgames.com#{path}"
 
   def get(url, opts \\ []) do
-    case get_bandwidth() do
-      :ok -> nil
-      wait -> Process.sleep(wait)
+    if @do_rate_limit do
+      case get_bandwidth() do
+        :ok -> nil
+        wait -> Process.sleep(wait)
+      end
     end
 
     with {:ok, %{body: body, status_code: 200}} <-

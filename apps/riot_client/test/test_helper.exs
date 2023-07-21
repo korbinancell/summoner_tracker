@@ -2,9 +2,6 @@ ExUnit.start()
 
 Mox.defmock(HTTPoison.BaseMock, for: HTTPoison.Base)
 
-Application.put_env(:riot_client, :http_client, HTTPoison.BaseMock)
-Application.put_env(:riot_client, :api_key, "riot-api-key")
-
 defmodule ApiMocks do
   def test_api(
         <<"https://", _region::binary-size(3),

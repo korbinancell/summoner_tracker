@@ -1,4 +1,5 @@
 defmodule RiotClient.Match do
+  @behaviour RiotClient.MatchClient
   @moduledoc """
   Calls to Match-V5 api https://developer.riotgames.com/apis#match-v5
   """
@@ -19,8 +20,7 @@ defmodule RiotClient.Match do
     }
   end
 
-  @spec get_ids_for_summoner(%RiotClient.Summoner{}, opts :: Keyword.t()) ::
-          {:ok, [String.t()]} | {:error, term()}
+  @impl true
   def get_ids_for_summoner(%RiotClient.Summoner{region: region, puuid: puuid}, opts) do
     url =
       region
@@ -34,8 +34,7 @@ defmodule RiotClient.Match do
     end
   end
 
-  @spec get_for_summoner(%RiotClient.Summoner{}, count :: integer) ::
-          {:ok, [%RiotClient.Match{}]} | {:error, term()}
+  @impl true
   def get_for_summoner(%RiotClient.Summoner{region: region} = sum, count) do
     with {:ok, match_ids} <- get_ids_for_summoner(sum, count: count),
          {:ok, matches} <- get_info(match_ids, region) do
@@ -45,8 +44,7 @@ defmodule RiotClient.Match do
     end
   end
 
-  @spec get_info(ids :: [String.t()], region :: String.t()) ::
-          {:ok, [%RiotClient.Match{}]} | {:error, term()}
+  @impl true
   def get_info(ids, region) when is_list(ids) do
     ids
     |> Enum.map(fn id -> Task.async(fn -> get_info(id, region) end) end)
@@ -61,8 +59,7 @@ defmodule RiotClient.Match do
     end)
   end
 
-  @spec get_info(id :: String.t(), region :: String.t()) ::
-          {:ok, %RiotClient.Match{}} | {:error, term()}
+  @impl true
   def get_info(id, region) when is_binary(id) do
     url =
       region

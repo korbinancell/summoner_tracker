@@ -5,10 +5,15 @@ defmodule SummonerWatch do
 
   import RiotClient.Region, only: [region?: 1]
 
-  @spec start_watch(name :: String.t(), region :: String.t(), any) ::
+  @check_times Application.compile_env!(:summoner_watch, :check_times)
+  @check_interval Application.compile_env!(:summoner_watch, :check_interval)
+  @matches_to_watch 5
+
+  @spec start_watch(name :: String.t(), region :: String.t(), any, matches_to_fetch: integer) ::
           {:error, any} | {:ok, list, list}
-  def start_watch(name, region, callback \\ nil) do
+  def start_watch(name, region, callback \\ nil, opts \\ []) do
     callback = callback || fn {_, res} -> IO.puts(res) end
+    matches_to_fetch = opts[:matches_to_fetch] || @matches_to_watch
 
     region =
       region
@@ -18,18 +23,15 @@ defmodule SummonerWatch do
     cond do
       !region?(region) -> {:error, "Invalid region"}
       !valid_username?(name) -> {:error, "Invalid name"}
-      true -> do_watch(name, region, callback)
+      true -> do_watch(name, region, matches_to_fetch, callback)
     end
   end
 
-  @matches_to_watch 1
-  @watch_for_min 60
-  @min 60 * 1000
-  defp do_watch(name, region, callback) do
-    with {:ok, summoner} <- RiotClient.Summoner.get_by_name(name, region),
-         {:ok, matches} <- RiotClient.Match.get_for_summoner(summoner, @matches_to_watch),
+  defp do_watch(name, region, matches_to_fetch, callback) do
+    with {:ok, summoner} <- get_summoner_client().get_by_name(name, region),
+         {:ok, matches} <- get_match_client().get_for_summoner(summoner, matches_to_fetch),
          puuids <- get_players(matches, summoner.puuid),
-         {:ok, participants} <- RiotClient.Summoner.get_by_puuid(puuids, region) do
+         {:ok, participants} <- get_summoner_client().get_by_puuid(puuids, region) do
       timestamp = get_timestamp()
       participants = [summoner | participants]
 
@@ -37,7 +39,7 @@ defmodule SummonerWatch do
         participants
         |> Enum.map(fn sum ->
           Task.Supervisor.async(SummonerWatch.TaskSupervisor, fn ->
-            watch_summoner(sum, timestamp, @watch_for_min, callback)
+            watch_summoner(sum, timestamp, @check_times, callback)
           end)
         end)
 
@@ -49,13 +51,19 @@ defmodule SummonerWatch do
     end
   end
 
+  defp get_summoner_client,
+    do: Module.concat([Application.get_env(:summoner_watch, :riot_client), Summoner])
+
+  defp get_match_client,
+    do: Module.concat([Application.get_env(:summoner_watch, :riot_client), Match])
+
   defp watch_summoner(_, _, 0, _), do: :ok
 
   defp watch_summoner(summoner, timestamp, retries, callback) do
-    Process.sleep(@min)
+    Process.sleep(@check_interval)
 
     with {:ok, [match_id]} <-
-           RiotClient.Match.get_ids_for_summoner(summoner, count: 1, startTime: timestamp) do
+           get_match_client().get_ids_for_summoner(summoner, count: 1, startTime: timestamp) do
       callback.({:ok, "Summoner #{summoner.name} completed match #{match_id}"})
       watch_summoner(summoner, get_timestamp(), retries - 1, callback)
     else

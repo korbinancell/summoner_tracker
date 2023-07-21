@@ -21,4 +21,14 @@ config :hackney, use_default_pool: false
 
 config :riot_client,
   api_key: "",
-  http_client: HTTPoison
+  http_client: HTTPoison,
+  do_rate_limit: true
+
+config :summoner_watch,
+  client: RiotClient,
+  riot_client_summoner: RiotClient.Summoner,
+  riot_client_match: RiotClient.Match,
+  check_times: 60,
+  check_interval: 60 * 1000
+
+import_config "#{Mix.env()}.exs"

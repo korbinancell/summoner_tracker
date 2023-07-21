@@ -27,7 +27,8 @@ defmodule SummonerWatch.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:riot_client, in_umbrella: true}
+      {:riot_client, in_umbrella: true},
+      {:mox, "~> 0.5.2", only: :test}
     ]
   end
 end
