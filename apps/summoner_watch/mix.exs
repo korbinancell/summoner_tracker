@@ -11,7 +11,8 @@ defmodule SummonerWatch.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      escript: [main_module: SummonerWatch.CLI]
     ]
   end
 

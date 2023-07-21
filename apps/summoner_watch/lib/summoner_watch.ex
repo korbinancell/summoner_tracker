@@ -5,6 +5,8 @@ defmodule SummonerWatch do
 
   import RiotClient.Region, only: [region?: 1]
 
+  @spec start_watch(name :: String.t(), region :: String.t(), any) ::
+          {:error, any} | {:ok, list, list}
   def start_watch(name, region, callback \\ nil) do
     callback = callback || fn {_, res} -> IO.puts(res) end
 
@@ -31,14 +33,17 @@ defmodule SummonerWatch do
       timestamp = get_timestamp()
       participants = [summoner | participants]
 
-      participants
-      |> Enum.map(fn sum ->
-        Task.Supervisor.async(SummonerWatch.TaskSupervisor, fn ->
-          watch_summoner(sum, timestamp, @watch_for_min, callback)
+      watch_tasks =
+        participants
+        |> Enum.map(fn sum ->
+          Task.Supervisor.async(SummonerWatch.TaskSupervisor, fn ->
+            watch_summoner(sum, timestamp, @watch_for_min, callback)
+          end)
         end)
-      end)
 
-      participants |> Enum.map(& &1.name)
+      participant_list = participants |> Enum.map(& &1.name)
+
+      {:ok, participant_list, watch_tasks}
     else
       err -> err
     end
